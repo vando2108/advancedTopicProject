@@ -8,9 +8,7 @@ import os
 #Get screen resolution
 os.system('python3 get_screen_resolution.py')
 FILE = open('screen_resolution.txt', 'r')
-width_screen, height_screen = FILE.readline().split(' ')
-print(width_screen, height_screen)
-
+width_screen, height_screen = list(map(int, FILE.readline().split(' ')))
 
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0.00
@@ -19,6 +17,7 @@ class Mouse:
     def __init__(self):
         self.x, self.y = pyautogui.position()
         pyautogui.move(-self.x, -self.y)
+        pyautogui.move(width_screen / 2, height_screen / 2)
         self.x, self.y = 0, 0
         pass
 
@@ -64,7 +63,6 @@ detected = []
 # Keep looping
 while True:
     # Grab the current paintWindow
-    time.sleep(1/65)
     (grabbed, frame) = camera.read()
 
     frame = cv2.flip(frame, 1)
@@ -106,7 +104,6 @@ while True:
         #If in the last turn we deteced action, we will move cursor
         if len(detected) != 0 and detected[-1] == True:
             tempx, tempy = Position[-1]
-            print(tempx, tempy)
             mouse.move(int(x) - tempx, int(y) - tempy)
             pass            
 
