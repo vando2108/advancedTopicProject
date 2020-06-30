@@ -7,16 +7,9 @@ DIRECTORY STRUCTURE:
         
 ----------------+ processed-1:
                     *.npy (4 classes: triangle, square, circle, others, 30000 files each class)
-        
-----------------+ processed-2:
-                    *.npy (340 classes, 500 files each class)
             
 --------+ meta
 ----------------+ processed-1:
-                    partitions.bin
-                    labels.bin
-            
-----------------+ processed-2:
                     partitions.bin
                     labels.bin
     
