@@ -27,3 +27,5 @@ REQUIREMENTS:
     tensorflow 2.2.0
     pandas 1.0.5
     numpy 1.19.0
+
+NOTE: To increase accuracy, if the maximum score of all classes less than 0.9, let the label be "others".
