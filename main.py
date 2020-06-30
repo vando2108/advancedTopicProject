@@ -56,12 +56,13 @@ cv2.namedWindow('Paint', cv2.WINDOW_AUTOSIZE)
 
 # Load the video
 camera = cv2.VideoCapture(0)    
-print(camera)
 
 detected = []
+Position = []
 
 # Keep looping
 while True:
+    time.sleep(1/65)
     # Grab the current paintWindow
     (grabbed, frame) = camera.read()
 
@@ -88,7 +89,6 @@ while True:
     center = None
 
     haveAction = False
-    Position = []
 
     # Check to see if any contours were found
     if len(cnts) > 0:
@@ -99,7 +99,6 @@ while True:
         cnt = sorted(cnts, key = cv2.contourArea, reverse = True)[0]
         # Get the radius of the enclosing circle around the found contour
         ((x, y), radius) = cv2.minEnclosingCircle(cnt)
-        Position.append((int(x), int(y)))
 
         #If in the last turn we deteced action, we will move cursor
         if len(detected) != 0 and detected[-1] == True:
@@ -125,12 +124,12 @@ while True:
         else :
             if colorIndex == 0:
                 bpoints[bindex].appendleft(center)
-    
+        Position.append((int(x), int(y)))
     # Append the next deque when no contours are detected (i.e., bottle cap reversed)
     else:
         bpoints.append(deque(maxlen=512))
         bindex += 1
-
+    
     detected.append(haveAction)
 
     # Draw lines of all the colors (Blue, Green, Red and Yellow)
