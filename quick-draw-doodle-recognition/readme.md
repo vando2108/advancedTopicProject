@@ -1,7 +1,9 @@
 # DIRECTORY STRUCTURE:
 
 ----quick-draw-doodle-recognition
+
 --------+ data
+
 ----------------+ csv: 
                     *.csv
         
@@ -9,8 +11,11 @@
                     *.npy (4 classes: triangle, square, circle, others, 30000 files each class)
             
 --------+ meta
+
 ----------------+ processed-1:
+
                     partitions.bin
+                    
                     labels.bin
     
 --------+ models
