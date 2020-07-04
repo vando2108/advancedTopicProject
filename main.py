@@ -4,6 +4,7 @@ from collections import deque
 import pyautogui
 import time
 import os
+import math
 
 #Get screen resolution
 os.system('python3 get_screen_resolution.py')
@@ -15,6 +16,7 @@ pyautogui.PAUSE = 0.00
 
 class Mouse:
     def __init__(self):
+        self.MOUSE_ENABLE = False
         self.x, self.y = pyautogui.position()
         pyautogui.move(-self.x, -self.y)
         pyautogui.move(width_screen / 2, height_screen / 2)
@@ -25,8 +27,28 @@ class Mouse:
         pyautogui.move(x, y)
         pass
 
+    def moveTo(self, x, y):
+        pyautogui.moveTo(x, y)
+        pass
+
     def getPosition(self):
         return self.x, self.y
+        pass
+
+    def clickLeft(self, x, y):
+        pyautogui.click(x=x, y=y, button='left')
+        pass
+
+    def clickRight(self, x, y):
+        pyautogui.click(x=x, y=y, button='right')
+        pass
+
+    def scrollVertical(self, y):
+        pyautogui.vscroll(y)
+        pass
+
+    def scrollHorizontal(self, x):
+        pyautogui.hscroll(x)
         pass
         
 
@@ -38,7 +60,7 @@ blueLower = np.array([100, 100, 100])
 blueUpper = np.array([140, 255, 255])
 
 # Define the upper and lower boundaries for a color to be considered "Red"
-redLower = np.array([150, 100, 100])
+redLower = np.array([150, 150, 150])
 redUpper = np.array([180, 255, 255])
 
 # Define a 5x5 kernel for erosion and dilation
@@ -53,7 +75,7 @@ colors = [(255, 0, 0)]
 colorIndex = 0
 
 # Setup the Paint interface
-paintWindow = np.zeros((471,636,3)) + 255       
+paintWindow = np.zeros((471, 636, 3)) + 255       
 paintWindow = cv2.rectangle(paintWindow, (40,1), (140,65), (0,0,0), 2)
 cv2.putText(paintWindow, "CLEAR ALL", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
 
@@ -77,13 +99,17 @@ while True:
     # Add the coloring options to the frame
     frame = cv2.rectangle(frame, (40, 1), (140, 65), (122, 122, 122), -1)
     cv2.putText(frame, "CLEAR ALL", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    if mouse.MOUSE_ENABLE == False:
+        cv2.circle(frame, (318, 235), 15, (0, 255, 0), thickness=2)
+        cv2.putText(frame, "MOVE YOUR FINGER HERE TO CONTROL THE MOUSE", (150, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (120, 255, 255), 2, cv2.LINE_AA)
+        pass
 
     # Check to see if we have reached the end of the video
     if not grabbed:
         break
 
     # Determine which pixels fall within the _blue_ boundaries and then blur the binary image
-    blueMask = cv2.inRange(hsv, redLower, redUpper)
+    blueMask = cv2.inRange(hsv, blueLower, blueUpper)
     blueMask = cv2.erode(blueMask, kernel, iterations=2)
     blueMask = cv2.morphologyEx(blueMask, cv2.MORPH_OPEN, kernel)
     blueMask = cv2.dilate(blueMask, kernel, iterations=1)
@@ -105,26 +131,44 @@ while True:
 
     haveAction = False
 
-    # Check to see if any contours were found
-    if len(cnts) > 0:
+    # Check to see if any blue contours were found
+    if len(blueCnts) > 0:
         haveAction = True
 
-    	# Sort the contours and find the largest one -- we
+    	# Sort the blue contours and find the largest one -- we
     	# will assume this contour correspondes to the area of the bottle cap
-        cnt = sorted(cnts, key = cv2.contourArea, reverse = True)[0]
+        blueCnt = sorted(blueCnts, key = cv2.contourArea, reverse = True)[0]
         # Get the radius of the enclosing circle around the found contour
-        ((x, y), radius) = cv2.minEnclosingCircle(cnt)
+        ((xb, yb), radius_b) = cv2.minEnclosingCircle(blueCnt)
 
-        #If in the last turn we deteced action, we will move cursor
-        if len(detected) != 0 and detected[-1] == True:
+        # Check if the object is in the middle of the camera frame
+        if math.sqrt((xb - 318)**2 + (yb - 235)**2) < 10:
+            mouse.MOUSE_ENABLE = True
+            mouse.moveTo(width_screen / 2, height_screen / 2)
+            pass
+
+        # If in the last turn we deteced action, we will move cursor
+        if len(detected) != 0 and detected[-1] == True and mouse.MOUSE_ENABLE:
             tempx, tempy = Position[-1]
-            mouse.move(int(x) - tempx, int(y) - tempy)
-            pass            
+            mouse.move(xb*4.0 - tempx*4.0, yb*4.0 - tempy*4.0)
+            pass    
 
-        # Draw the circle around the contour
-        cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
+        # If the red object appear, we will click the left mouse
+        if len(redCnts) > 0 and mouse.MOUSE_ENABLE:
+            # Sort the red contours and find the largest one -- we
+            redCnt = sorted(redCnts, key = cv2.contourArea, reverse = True)[0]
+            # Get the radius of the enclosing circle around the found contour
+            ((xr, yr), radius_r) = cv2.minEnclosingCircle(redCnt)
+            # Draw the circle around the red contour
+            cv2.circle(frame, (int(xr), int(yr)), int(radius_r), (255, 255, 0), 2)
+            mouse.clickLeft(xb, yb)
+            pass
+
+        # Draw the circle around the blue contour
+        cv2.circle(frame, (int(xb), int(yb)), int(radius_b), (0, 255, 255), 2)
+
         # Get the moments to calculate the center of the contour (in this case Circle)
-        M = cv2.moments(cnt)
+        M = cv2.moments(blueCnt)
         center = (int(M['m10'] / M['m00']), int(M['m01'] / M['m00']))
 
         if center[1] <= 65:
@@ -139,11 +183,13 @@ while True:
         else :
             if colorIndex == 0:
                 bpoints[bindex].appendleft(center)
-        Position.append((int(x), int(y)))
+        Position.append((int(xb), int(yb)))
     # Append the next deque when no contours are detected (i.e., bottle cap reversed)
     else:
         bpoints.append(deque(maxlen=512))
         bindex += 1
+        mouse.MOUSE_ENABLE = False
+        pass
     
     detected.append(haveAction)
 
