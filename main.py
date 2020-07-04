@@ -32,9 +32,14 @@ class Mouse:
 
 mouse = Mouse()
 
+# Note: color coding is in HSV, not RGB !
 # Define the upper and lower boundaries for a color to be considered "Blue"
-blueLower = np.array([100, 60, 60])
+blueLower = np.array([100, 100, 100])
 blueUpper = np.array([140, 255, 255])
+
+# Define the upper and lower boundaries for a color to be considered "Red"
+redLower = np.array([150, 100, 100])
+redUpper = np.array([180, 255, 255])
 
 # Define a 5x5 kernel for erosion and dilation
 kernel = np.ones((5, 5), np.uint8)
@@ -77,14 +82,24 @@ while True:
     if not grabbed:
         break
 
-    # Determine which pixels fall within the blue boundaries and then blur the binary image
-    blueMask = cv2.inRange(hsv, blueLower, blueUpper)
+    # Determine which pixels fall within the _blue_ boundaries and then blur the binary image
+    blueMask = cv2.inRange(hsv, redLower, redUpper)
     blueMask = cv2.erode(blueMask, kernel, iterations=2)
     blueMask = cv2.morphologyEx(blueMask, cv2.MORPH_OPEN, kernel)
     blueMask = cv2.dilate(blueMask, kernel, iterations=1)
 
-    # Find contours in the image
-    (cnts, _) = cv2.findContours(blueMask.copy(), cv2.RETR_EXTERNAL,
+    # Determine which pixels fall within the _red_ boundaries and then blur the binary image
+    redMask = cv2.inRange(hsv, redLower, redUpper)
+    redMask = cv2.erode(redMask, kernel, iterations=2)
+    redMask = cv2.morphologyEx(redMask, cv2.MORPH_OPEN, kernel)
+    redMask = cv2.dilate(redMask, kernel, iterations=1)
+
+    # Find contours of the blue objects in the image
+    (blueCnts, _) = cv2.findContours(blueMask.copy(), cv2.RETR_EXTERNAL,
+    	cv2.CHAIN_APPROX_SIMPLE)
+
+    # Find contours of the red objects in the image
+    (redCnts, _) = cv2.findContours(redMask.copy(), cv2.RETR_EXTERNAL,
     	cv2.CHAIN_APPROX_SIMPLE)
     center = None
 
